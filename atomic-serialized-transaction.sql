@@ -170,7 +170,7 @@ GO
 
 -- sp exception log
 CREATE PROCEDURE elevant.[ExceptionLog]
-@number INT, @line INT, @msg NVARCHAR (4000), @proc NVARCHAR (128), @username NVARCHAR (128), @logid INT = 0 OUTPUT
+@number INT, @line INT, @msg NVARCHAR (4000), @proc SYSNAME, @username NVARCHAR (128), @logid INT = 0 OUTPUT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -188,3 +188,4 @@ BEGIN
 	SET @logid = SCOPE_IDENTITY();
 END
 GO
+
