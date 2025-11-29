@@ -13,8 +13,8 @@ BEGIN TRY --procedure-level handler
 	DECLARE @azurecount int;
 	DECLARE @tablesattempted int;
 
-	DECLARE @tablename sysname;
 	DECLARE @schemaname sysname;
+	DECLARE @tablename sysname;
 
 	DECLARE @localtable nvarchar(128);
 	DECLARE @azuretable nvarchar(128);
@@ -101,6 +101,7 @@ END TRY
 BEGIN CATCH
 	SELECT ERROR_MESSAGE();
 END CATCH
+
 
 
 
