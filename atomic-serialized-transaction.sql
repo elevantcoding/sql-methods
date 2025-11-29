@@ -53,7 +53,8 @@ BEGIN
             VALUES ('elevant.EntryByWeek', 'Updated to Payroll Number ' + CONVERT (NVARCHAR (MAX), @nextpayrollnumbertext) + ' Due to Completed Payrolls Found on Payroll Week Ending Date ' + CONVERT (NVARCHAR (MAX), @prwedate), @submittedby, GETDATE());
 
         -- STEP 1: ARCHIVE
-        INSERT INTO elevant.EntryByWeek_Archive (HourEntryID, EmployeeID, EEMasterID, ContractNo, SubContract, WeekEndingDate, PayrollWeekEndingDate, PayrollNumber, [Shift], [Time], WorkCategory, FieldWorkCode, Mon, Tue, Wed, Thu, Fri, Sat, Sun, UserName, Notes, NotesExist, ModifiedDateTime)
+        INSERT INTO elevant.EntryByWeek_Archive (HourEntryID, EmployeeID, EEMasterID, ContractNo, SubContract, WeekEndingDate, PayrollWeekEndingDate, PayrollNumber, 
+            [Shift], [Time], WorkCategory, FieldWorkCode, Mon, Tue, Wed, Thu, Fri, Sat, Sun, UserName, Notes, NotesExist, ModifiedDateTime)
         SELECT h.HourEntryID,
                h.EmployeeID,
                h.EEMasterID,
@@ -76,14 +77,15 @@ BEGIN
                h.UserName,
                h.Notes,
                h.NotesExist,
-               h.ModifiedDateTime,
+               h.ModifiedDateTime
         FROM   elevant.EntryByWeek AS h
         WHERE  h.WeekEndingDate = @wedate
                AND h.PayrollWeekEndingDate = @prwedate
                AND h.UserName = @submittedby;
         
         -- STEP 2: WRITE TO MAIN TABLE
-        INSERT INTO elevant.EntryByRow (ContractNo, EmployeeID, WorkDate, [Shift], CategoryCode, PayrollWeekEndingDate, PayrollNumber, WeekEndingDate, EngineeringSubContract, FieldWorkCode, STHours, OTHours, DTHours, HourType, UserName, Notes, NotesExist, Submitted, Process, ModifiedDateTime, RecordTypeID, ArchiveID)
+        INSERT INTO elevant.EntryByRow (ContractNo, EmployeeID, WorkDate, [Shift], CategoryCode, PayrollWeekEndingDate, PayrollNumber, WeekEndingDate, EngineeringSubContract, FieldWorkCode,
+            STHours, OTHours, DTHours, HourType, UserName, Notes, NotesExist, Submitted, Process, ModifiedDateTime, RecordTypeID, ArchiveID)
         SELECT he.ContractNo,
                he.EmployeeID,
                he.WorkDate,
@@ -103,7 +105,7 @@ BEGIN
                he.NotesExist,
                1 AS Submitted,
                he.Process,
-               he.ModDateTime,
+               he.ModifiedDateTime,
                13 AS RecordTypeID,
                hea.ArchiveID
         FROM   elevant.View_UnpivotAndTransformEntryByWeek AS he
@@ -137,6 +139,7 @@ BEGIN
     END CATCH
 END
 GO
+
 
 
 
