@@ -1,8 +1,5 @@
--- use of UNPIVOT to transform horizontally-stored day columns from a staging table
--- into a row-based structure for insertion into operational recordkeeping
-
--- this view takes weekly timesheet entry records and produces a 
--- normalized, daily record format using a relational transform
+-- demonstrates use of UNPIVOT to transform weekly timesheet records
+-- stored with daily hour columns into a normalized per-day row format
 
 CREATE VIEW elevant.[View_UnpivotAndTransformEntryByWeek]
 AS
@@ -73,6 +70,7 @@ UNPIVOT (
 
 WHERE HoursWorked <> 0
 GO
+
 
 
 
