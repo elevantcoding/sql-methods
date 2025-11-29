@@ -24,8 +24,8 @@ BEGIN TRY --procedure-level handler
 		(
 		SchemaName sysname,
 		TableName sysname,
-		CountDev INT NULL,
-		CountAzure INT NULL,
+		LocalCount INT NULL,
+		AzureCount INT NULL,
 		StatusMessage NVARCHAR(4000),
 		ErrorMessage NVARCHAR(4000),
 		LoggedAt DATETIME DEFAULT GETDATE()
@@ -59,11 +59,11 @@ BEGIN TRY --procedure-level handler
 				SET @sql = N'SELECT @recordcount = COUNT(*) FROM ' + @localtable		-- create sql for record count
 				EXEC sp_executesql @sql, N'@recordcount INT OUTPUT', @localcount OUTPUT;		-- exec sql and retrieve @recordcount into @localcount
 		
-				SET @sqlazure = N'SELECT @recordcountazure = COUNT(*) FROM ' + @azuretable -- if exists, create sql for azure table record count
+				SET @sqlazure = N'SELECT @recordcountazure = COUNT(*) FROM ' + @azuretable -- create sql for azure table record count
 				EXEC sp_executesql @sqlazure, N'@recordcountazure INT OUTPUT', @azurecount OUTPUT; -- exec sql and retrieve @recordcountazure into @azurecount
 		
 				IF @localcount <> @azurecount -- if count returned for both tables, if count of records does not match
-					INSERT INTO #unmatchedrecordcounts (SchemaName, TableName, CountDev, CountAzure, StatusMessage) --log table name, counts and message
+					INSERT INTO #unmatchedrecordcounts (SchemaName, TableName, LocalCount, AzureCount, StatusMessage) --log schema name, table name, counts for each and message
 					VALUES (@schemaname, @tablename, @localcount, @azurecount, 'Record count mismatch');
 				
 				FETCH NEXT FROM localtables INTO @schemaname, @tablename; -- next record
@@ -72,7 +72,7 @@ BEGIN TRY --procedure-level handler
 			BEGIN CATCH
 				INSERT INTO #unmatchedrecordcounts (SchemaName, TableName, ErrorMessage)
 				VALUES (@schemaname, @tablename, ERROR_MESSAGE());
-				FETCH NEXT FROM localtables INTO @schemaname, @tablename; -- next record if err
+				FETCH NEXT FROM localtables INTO @schemaname, @tablename; -- proceed to next record if err
 			END CATCH
 
 		END
@@ -82,8 +82,8 @@ BEGIN TRY --procedure-level handler
 
 	-- get tables with unmatched record counts
 	SELECT 
-	SchemaName, TableName, CountDev, CountAzure, 
-	CAST(CASE WHEN ErrorMessage IS NULL THEN COALESCE(CountAzure,0) - COALESCE(CountDev,0) ELSE NULL END AS INT) AS Diff,
+	SchemaName, TableName, LocalCount, AzureCount, 
+	CAST(CASE WHEN ErrorMessage IS NULL THEN COALESCE(AzureCount,0) - COALESCE(LocalCount,0) ELSE NULL END AS INT) AS Diff,
 	StatusMessage, ErrorMessage, LoggedAt
 	FROM #unmatchedrecordcounts
 	ORDER BY SchemaName, TableName;
@@ -101,5 +101,6 @@ END TRY
 BEGIN CATCH
 	SELECT ERROR_MESSAGE();
 END CATCH
+
 
 
