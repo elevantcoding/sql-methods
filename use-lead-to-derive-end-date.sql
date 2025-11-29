@@ -1,7 +1,7 @@
 -- use LEAD to derive an End Date from Sequential Start Dates
 
 -----------------------------------------------------------------------------
---| Rate ID | EmployeeID | PositionID | HourlyRate | StartDate  | End Date  |
+--| RateID  | EmployeeID | PositionID | HourlyRate | StartDate  | EndDate   |
 -----------------------------------------------------------------------------
 --| 1	    | 1	         | 20	      | 20.00	   | 2011-05-01 | 2013-05-26|
 --| 2	    | 1	         | 20	      | 21.00	   | 2013-05-27 | 2015-03-22|
@@ -25,3 +25,4 @@ CASE
 END AS EndDate
 FROM elevant.RateTable r
 ORDER BY r.EmployeeID, r.PositionID
+
