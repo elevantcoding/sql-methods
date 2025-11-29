@@ -6,24 +6,24 @@ GO
 
 BEGIN TRY --procedure-level handler
 
-	DECLARE @sql nvarchar(max);
-	DECLARE @sqlazure nvarchar(max);
+	DECLARE @sql NVARCHAR(max);
+	DECLARE @sqlazure NVARCHAR(max);
 
-	DECLARE @localcount int;
-	DECLARE @azurecount int;
-	DECLARE @tablesattempted int;
+	DECLARE @localcount INT;
+	DECLARE @azurecount INT;
+	DECLARE @tablesattempted INT;
 
-	DECLARE @schemaname sysname;
-	DECLARE @tablename sysname;
+	DECLARE @schemaname SYSNAME;
+	DECLARE @tablename SYSNAME;
 
-	DECLARE @localtable nvarchar(128);
-	DECLARE @azuretable nvarchar(128);
+	DECLARE @localtable NVARCHAR(128);
+	DECLARE @azuretable NVARCHAR(128);
 
 	DROP TABLE IF EXISTS #unmatchedrecordcounts; -- create temp results table fresh
 		CREATE TABLE #unmatchedrecordcounts -- temp table to store and display results at the conclusion of processing
 		(
-		SchemaName sysname,
-		TableName sysname,
+		SchemaName SYSNAME,
+		TableName SYSNAME,
 		LocalCount INT NULL,
 		AzureCount INT NULL,
 		StatusMessage NVARCHAR(4000),
@@ -101,6 +101,7 @@ END TRY
 BEGIN CATCH
 	SELECT ERROR_MESSAGE();
 END CATCH
+
 
 
 
