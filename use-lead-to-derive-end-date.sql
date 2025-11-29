@@ -21,8 +21,9 @@ CASE
     WHEN LEAD(r.StartDate) OVER (PARTITION BY r.EmployeeID, r.PositionID ORDER BY r.StartDate) IS NOT NULL THEN 
         DATEADD(DAY, -1, LEAD(r.StartDate) OVER (PARTITION BY r.EmployeeID, r.PositionID ORDER BY r.StartDate))        
     ELSE 
-        '12/31/2050'
+        '2050-12-31'
 END AS EndDate
 FROM elevant.RateTable r
 ORDER BY r.EmployeeID, r.PositionID
+
 
