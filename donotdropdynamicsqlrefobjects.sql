@@ -22,7 +22,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
                 AND m.[definition] LIKE '%[' + @objname + ']%' -- eventdata object
            )
                BEGIN
-                   SET @msg = @objname + ' is referenced wihinin dynamic sql in one or more procedures — dropping is not advised.';
+                   SET @msg = @objname + ' is referenced within dynamic sql in one or more procedures — dropping is not advised.';
                    THROW 50001, @msg, 1;
                END
            ELSE
@@ -31,6 +31,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
        END
 
 GO
+
 
 
 
