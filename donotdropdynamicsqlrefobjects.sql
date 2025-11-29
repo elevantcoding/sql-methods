@@ -4,6 +4,13 @@ GO
 -- SCHEMABINDING can't stop drops on objects referenced via dynamic SQL
 -- This trigger can.
 -- dynamic sql; ddl trigger; prevent accidental drop; dependency management; sql_modules search; alter view safety
+
+-- NOTE: this trigger assumes your database uses meaningful and structured object naming conventions so that the
+-- object names are unlikely to appear coincidentally in unrelated contexts.
+-- This code may be adapted to what works for your environment and in order to effectively identify the object,
+-- such as looking for the fully-qualified object name including schema and/or using OR for identifying the object
+-- both with and without brackets
+
 CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
     ON DATABASE
     FOR DROP_TABLE, DROP_VIEW
@@ -22,7 +29,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
                 AND m.[definition] LIKE '%[' + @objname + ']%' -- eventdata object
            )
                BEGIN
-                   SET @msg = @objname + ' is referenced within dynamic sql in one or more procedures — dropping is not advised.';
+                   SET @msg = @objname + ' is referenced in a procedure with dynamic sql and cannot be dropped.';
                    THROW 50001, @msg, 1;
                END
            ELSE
@@ -31,12 +38,5 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
        END
 
 GO
-
-
-
-
-
-
-
 
 
