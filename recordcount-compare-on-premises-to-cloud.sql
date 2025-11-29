@@ -1,8 +1,7 @@
--- this sql was used to compare record counts in an off-line instance of a database
--- to the records in a database in Azure SQL
+-- compare records between a local and Azure SQL instance
+-- uses Linked Servers
 
-
-USE SAMPLE -- your local database
+USE LOCALDATABASENAME -- your local database
 GO
 
 BEGIN TRY --procedure-level handler
@@ -99,3 +98,4 @@ END TRY
 BEGIN CATCH
 	SELECT ERROR_MESSAGE();
 END CATCH
+
