@@ -59,14 +59,13 @@ FROM (
         h.FieldWorkCode, 
         h.Mon, h.Tue, h.Wed, h.Thu, h.Fri, h.Sat, h.Sun,
         h.UserName,
-		CASE WHEN ua.HireType = 'Direct-hire' THEN 1 ELSE 0 END AS Process,
+		CASE WHEN et.HireType = 1 THEN 1 ELSE 0 END AS Process,
         h.Notes,
         h.NotesExist,
         h.ModifiedDateTime
     FROM elevant.EntryByWeek h
 	INNER JOIN elevant.Employee en ON h.EmployeeID = en.EmployeeID
 	INNER JOIN elevant.EmployeeTypes et ON en.[TypeID] = et.[TypeID]
-	INNER JOIN elevant.UnionAffiliation ua On et.UnionAffiliationID = ua.UnionAffiliationID
 ) p
 UNPIVOT (
     HoursWorked FOR [DayOfWeek] IN (Mon, Tue, Wed, Thu, Fri, Sat, Sun)
@@ -74,6 +73,7 @@ UNPIVOT (
 
 WHERE HoursWorked <> 0
 GO
+
 
 
 
