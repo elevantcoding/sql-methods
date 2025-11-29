@@ -59,7 +59,7 @@ FROM (
         h.FieldWorkCode, 
         h.Mon, h.Tue, h.Wed, h.Thu, h.Fri, h.Sat, h.Sun,
         h.UserName,
-		CASE WHEN et.HireType = 1 THEN 1 ELSE 0 END AS Process,
+		CASE WHEN et.IsDirectHire = 1 THEN 1 ELSE 0 END AS Process,
         h.Notes,
         h.NotesExist,
         h.ModifiedDateTime
@@ -73,6 +73,7 @@ UNPIVOT (
 
 WHERE HoursWorked <> 0
 GO
+
 
 
 
