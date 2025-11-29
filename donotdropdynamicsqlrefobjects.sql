@@ -8,7 +8,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
     ON DATABASE
     FOR DROP_TABLE, DROP_VIEW
     AS BEGIN
-           DECLARE @objname AS NVARCHAR (255);
+           DECLARE @objname AS sysname;
            DECLARE @msg AS NVARCHAR (4000);
            DECLARE @eventinfo AS XML = EVENTDATA();
 
@@ -31,6 +31,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
        END
 
 GO
+
 
 
 
