@@ -11,7 +11,7 @@
 -- 5 delete original staging records
 -- 6 commit actions atomically
 
-ALTER PROCEDURE elevant.SubmitWeeklyHours
+CREATE PROCEDURE elevant.SubmitWeeklyHours
 @wedate DATE, @prwedate DATE, @submittedby VARCHAR (75), @committed BIT OUTPUT, @message NVARCHAR (255) OUTPUT, @logid INT OUTPUT
 AS
 BEGIN
@@ -137,6 +137,7 @@ BEGIN
     END CATCH
 END
 GO
+
 
 
 
