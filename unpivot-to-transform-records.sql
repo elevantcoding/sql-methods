@@ -1,5 +1,6 @@
 -- demonstrates use of UNPIVOT to transform weekly timesheet records
 -- stored with daily hour columns into a normalized per-day row format
+-- this view is used by SbumitWeeklyHours to generate row-based entries for payroll (see: atomic-serialized-transaction.sql)
 
 CREATE VIEW elevant.[View_UnpivotAndTransformEntryByWeek]
 AS
@@ -70,6 +71,7 @@ UNPIVOT (
 
 WHERE HoursWorked <> 0
 GO
+
 
 
 
