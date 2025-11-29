@@ -1,24 +1,18 @@
-USE [GBLDBSYSTEM]
-GO
+-- use of UNPIVOT to transform horizontally-stored day columns from a staging table
+-- into a row-based structure for insertion into operational recordkeeping
 
-/****** Object:  View [dbo].[View_Timekeeping_HourEntry_New]    Script Date: 11/29/2025 5:21:00 PM ******/
-SET ANSI_NULLS ON
-GO
+-- this view takes weekly timesheet entry records and produces a 
+-- normalized, daily record format using a relational transform
 
-SET QUOTED_IDENTIFIER ON
-GO
-
-
-ALTER VIEW [dbo].[View_Timekeeping_HourEntry_New]
+CREATE VIEW elevant.[View_UnpivotAndTransformEntryByWeek]
 AS
-
 SELECT
     HourEntryID,
     ContractNo,    
 	EmployeeID,
     EEMasterID,	
 	DATEADD(DAY, 
-        CASE [DayOfWeek]
+        (CASE [DayOfWeek]
             WHEN 'Mon' THEN -6
             WHEN 'Tue' THEN -5
             WHEN 'Wed' THEN -4
@@ -26,7 +20,7 @@ SELECT
             WHEN 'Fri' THEN -2
             WHEN 'Sat' THEN -1
             WHEN 'Sun' THEN  0
-        END,
+        END),
         WeekEndingDate
     ) AS WorkDate,
 	WeekEndingDate,    
@@ -46,8 +40,7 @@ SELECT
 	Process,
     Notes,
     NotesExist,
-    ModifiedDate As ModDate, 
-    ModifiedTime As ModTime,
+    ModifiedDateTime, 
     [DayOfWeek]
     
 FROM (
@@ -69,12 +62,11 @@ FROM (
 		CASE WHEN ua.HireType = 'Direct-hire' THEN 1 ELSE 0 END AS Process,
         h.Notes,
         h.NotesExist,
-        h.ModifiedDate, 
-        h.ModifiedTime
-    FROM tblHourEntry h
-	INNER JOIN tblEmployeeName en ON h.EmployeeID = en.EmpID
-	INNER JOIN tblEEType et ON en.[Type] = et.[Type]
-	INNER JOIN tblUnionAffiliation ua On et.UnionAffiliation = ua.UnionAffiliationID
+        h.ModifiedDateTime
+    FROM elevant.EntryByWeek h
+	INNER JOIN elevant.Employee en ON h.EmployeeID = en.EmployeeID
+	INNER JOIN elevant.EmployeeTypes et ON en.[TypeID] = et.[TypeID]
+	INNER JOIN elevant.UnionAffiliation ua On et.UnionAffiliationID = ua.UnionAffiliationID
 ) p
 UNPIVOT (
     HoursWorked FOR [DayOfWeek] IN (Mon, Tue, Wed, Thu, Fri, Sat, Sun)
@@ -82,5 +74,6 @@ UNPIVOT (
 
 WHERE HoursWorked <> 0
 GO
+
 
 
