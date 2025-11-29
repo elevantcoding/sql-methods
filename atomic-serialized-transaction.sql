@@ -4,12 +4,14 @@
 -- this format uses hours submitted by a user for the payroll week ending date and the week ending date worked
 -- returns commit success (boolean) and will return err messages, if any, along with the record id of logged err message for review
 
--- 1 determine safe, unused payroll batch number using a scalar function
+-- 1 determine available, sequential payroll batch number using a scalar function
 -- 2 archive source records exactly as submitted
--- 3 transform weekly entry into row-based format using a view with UNPIVOT
+-- 3 transform weekly entries into row-based format using a view with UNPIVOT
 -- 4 insert transformed records to operational table
 -- 5 delete original staging records
 -- 6 commit actions atomically
+
+-- scalar functions referenced in this procedure are shown below the procedure definition
 
 CREATE PROCEDURE elevant.SubmitWeeklyHours
 @wedate DATE, @prwedate DATE, @submittedby VARCHAR (75), @committed BIT OUTPUT, @message NVARCHAR (255) OUTPUT, @logid INT OUTPUT
@@ -140,8 +142,49 @@ BEGIN
 END
 GO
 
+-- find the next, sequential payroll batch number outside of batches marked complete and outside of batches in process
+CREATE FUNCTION elevant.[GetNextPayrollNumber]
+(@prwedate DATE)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @nextpr AS INT;
+    SET @nextpr = 1;
 
+    WHILE EXISTS (SELECT 1
+                  FROM   elevant.PayrollBatchRecord
+                  WHERE  PayrollWeekEndingDate = @prwedate
+                         AND PayrollNumber = @nextpr
+                         AND PayrollComplete = 1)
+          OR EXISTS (SELECT 1
+                     FROM   elevant.PayrollInProcess
+                     WHERE  PayrollWeekEndingDate = @prwedate
+                            AND PayrollNumber = @nextpr)
+        BEGIN
+            SET @nextpr = @nextpr + 1;
+        END
+    RETURN @nextpr;
+END
 
+GO
 
+-- sp exception log
+CREATE PROCEDURE elevant.[ExceptionLog]
+@number INT, @line INT, @msg NVARCHAR (4000), @proc NVARCHAR (128), @username NVARCHAR (128), @logid INT = 0 OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
 
+    DECLARE @date AS DATETIME;
+    DECLARE @source AS NVARCHAR (50);
+    DECLARE @origin AS NVARCHAR (100);
 
+    SET @date = GETDATE();
+    SET @source = 'Stored Procedure';
+    SET @origin = 'SQL Server';
+    
+    INSERT INTO elevant.ExceptionLog (ErrDate, ErrNo, ErrLine, ErrDesc, ErrSource, ProcName, ModType, UserName, ErrOrigin)
+    VALUES (@date, @number, @line, @msg, @source, @proc, 'SP', @username, @origin);
+	SET @logid = SCOPE_IDENTITY();
+END
+GO
