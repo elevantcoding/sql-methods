@@ -15,11 +15,11 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
     ON DATABASE
     FOR DROP_TABLE, DROP_VIEW
     AS BEGIN
-           DECLARE @objname AS sysname;
+           DECLARE @objname AS SYSNAME;
            DECLARE @msg AS NVARCHAR (4000);
            DECLARE @eventinfo AS XML = EVENTDATA();
 
-           SELECT @objname = @eventinfo.value('(/EVENT_INSTANCE/ObjectName)[1]', 'sysname');
+           SELECT @objname = @eventinfo.value('(/EVENT_INSTANCE/ObjectName)[1]', 'SYSNAME');
 
            IF EXISTS (
                 SELECT 1 FROM sys.objects o
@@ -38,5 +38,6 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
        END
 
 GO
+
 
 
