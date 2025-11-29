@@ -1,9 +1,10 @@
 -- weekly hours are submitted via procedure that commits atomically under serializable isolation
 -- to prevent concurrent modifications while processing is underway.
--- this format uses hours submitted by user for the payroll week ending date and the week ending date worked
+
+-- this format uses hours submitted by a user for the payroll week ending date and the week ending date worked
 -- returns commit success (boolean) and will return err messages, if any, along with the record id of logged err message for review
 
--- 1 determine safe, unused payroll batch number
+-- 1 determine safe, unused payroll batch number using a scalar function
 -- 2 archive source records exactly as submitted
 -- 3 transform weekly entry into row-based format using a view with UNPIVOT
 -- 4 insert transformed records to operational table
@@ -11,30 +12,30 @@
 -- 6 commit actions atomically
 
 ALTER PROCEDURE elevant.SubmitWeeklyHours
-@WEDate DATE, @PRWEDate DATE, @UserName VARCHAR (75), @Commit BIT OUTPUT, @Message NVARCHAR (255) OUTPUT, @LogID INT OUTPUT
+@wedate DATE, @prwedate DATE, @submittedby VARCHAR (75), @committed BIT OUTPUT, @message NVARCHAR (255) OUTPUT, @logid INT OUTPUT
 AS
 BEGIN
 
-    DECLARE @NextPayrollNumber AS INT;
-    DECLARE @NextPayrollNumberText AS NVARCHAR (5);
-    DECLARE @no AS INT;
+    DECLARE @nextpayrollnumber AS INT;
+    DECLARE @nextpayrollnumbertext AS NVARCHAR (5);
+    DECLARE @number AS INT;
     DECLARE @line AS INT;
     DECLARE @msg AS NVARCHAR (4000);
     DECLARE @proc AS NVARCHAR (128);
 
     -- initialize
-    SET @Commit = 0;
-    SET @Message = '';
-    SET @LogID = 0;
+    SET @committed = 0;
+    SET @message = '';
+    SET @logid = 0;
 
     -- if no information found for specified parameters, exit procedure
     IF NOT EXISTS (SELECT 1
                    FROM   elevant.EntryByWeek
-                   WHERE  PayrollWeekEndingDate = @PRWEDate
-                          AND WeekEndingDate = @WEDate
-                          AND UserName = @UserName)
+                   WHERE  PayrollWeekEndingDate = @prwedate
+                          AND WeekEndingDate = @wedate
+                          AND UserName = @submittedby)
         BEGIN
-            SET @Message = N'No records found to submit / already submitted.';
+            SET @message = N'No records found to submit / already submitted.';
             RETURN;
         END
 
@@ -44,14 +45,15 @@ BEGIN
         SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
         BEGIN TRANSACTION;
         
-        SET @NextPayrollNumber = elevant.GetNextPayrollNumber(@PRWEDate); -- determine the next available payroll batch number based on set-forth conditions
-        SET @NextPayrollNumberText = CAST (@NextPayrollNumber AS NVARCHAR (5)); -- convert to nvarchar per table design
+        SET @nextpayrollnumber = elevant.GetNextPayrollNumber(@prwedate); -- determine the next available payroll batch number based on set-forth conditions
+        SET @nextpayrollnumbertext = CAST (@nextpayrollnumber AS NVARCHAR (5)); -- convert to nvarchar per table design
 
-        IF @NextPayrollNumber > 1 -- log a message to the edits table if not using the first sequence
+        IF @nextpayrollnumber > 1 -- log a message to the edits table if not using the first sequence
             INSERT INTO tblEdits (FormName, EditDescription, UserName, EditDateTime)
-            VALUES ('elevant.EntryByWeek', 'Updated to Payroll Number ' + CONVERT (NVARCHAR (MAX), @NextPayrollNumberText) + ' Due to Completed Payrolls Found on Payroll Week Ending Date ' + CONVERT (NVARCHAR (MAX), @PRWEDate), @UserName, GETDATE());
+            VALUES ('elevant.EntryByWeek', 'Updated to Payroll Number ' + CONVERT (NVARCHAR (MAX), @nextpayrollnumbertext) + ' Due to Completed Payrolls Found on Payroll Week Ending Date ' + CONVERT (NVARCHAR (MAX), @prwedate), @submittedby, GETDATE());
 
-        INSERT INTO elevant.EntryByWeek_Archive (HourEntryID, EmployeeID, EEMasterID, ContractNo, SubContract, WeekEndingDate, PayrollWeekEndingDate, PayrollNumber, [Shift], [Time], WorkCategory, FieldWorkCode, Mon, Tue, Wed, Thu, Fri, Sat, Sun, UserName, Notes, NotesExist, ModifiedDate, ModifiedTime)
+        -- STEP 1: ARCHIVE
+        INSERT INTO elevant.EntryByWeek_Archive (HourEntryID, EmployeeID, EEMasterID, ContractNo, SubContract, WeekEndingDate, PayrollWeekEndingDate, PayrollNumber, [Shift], [Time], WorkCategory, FieldWorkCode, Mon, Tue, Wed, Thu, Fri, Sat, Sun, UserName, Notes, NotesExist, ModifiedDateTime)
         SELECT h.HourEntryID,
                h.EmployeeID,
                h.EEMasterID,
@@ -74,21 +76,21 @@ BEGIN
                h.UserName,
                h.Notes,
                h.NotesExist,
-               h.ModifiedDate,
-               h.ModifiedTime
+               h.ModifiedDateTime,
         FROM   elevant.EntryByWeek AS h
-        WHERE  h.WeekEndingDate = @WEDate
-               AND h.PayrollWeekEndingDate = @PRWEDate
-               AND h.UserName = @UserName;
-
-        INSERT INTO elevant.EntryByRow (ContractNo, EmployeeID, WorkDate, [Shift], CategoryCode, PayrollWeekEndingDate, PayrollNumber, WeekEndingDate, EngineeringSubContract, FieldWorkCode, STHours, OTHours, DTHours, HourType, UserName, Notes, NotesExist, Submitted, Process, ModifiedDate, ModifiedTime, RecordTypeID, ArchiveID)
+        WHERE  h.WeekEndingDate = @wedate
+               AND h.PayrollWeekEndingDate = @prwedate
+               AND h.UserName = @submittedby;
+        
+        -- STEP 2: WRITE TO MAIN TABLE
+        INSERT INTO elevant.EntryByRow (ContractNo, EmployeeID, WorkDate, [Shift], CategoryCode, PayrollWeekEndingDate, PayrollNumber, WeekEndingDate, EngineeringSubContract, FieldWorkCode, STHours, OTHours, DTHours, HourType, UserName, Notes, NotesExist, Submitted, Process, ModifiedDateTime, RecordTypeID, ArchiveID)
         SELECT he.ContractNo,
                he.EmployeeID,
                he.WorkDate,
                he.[Shift],
                he.CategoryCode,
                he.PayrollWeekEndingDate,
-               @NextPayrollNumberText,
+               @nextpayrollnumbertext,
                he.WeekEndingDate,
                he.SubContract,
                he.FieldWorkCode,
@@ -101,28 +103,25 @@ BEGIN
                he.NotesExist,
                1 AS Submitted,
                he.Process,
-               he.ModDate,
-               he.ModTime,
+               he.ModDateTime,
                13 AS RecordTypeID,
                hea.ArchiveID
         FROM   elevant.View_UnpivotAndTransformEntryByWeek AS he
-               INNER JOIN
-               elevant.EntryByWeek_Archive AS hea
-               ON he.HourEntryID = hea.HourEntryID
-        WHERE  he.PayrollWeekEndingDate = @PRWEDate
-               AND he.WeekEndingDate = @WEDate
-               AND he.UserName = @UserName
+               INNER JOIN elevant.EntryByWeek_Archive AS hea ON he.HourEntryID = hea.HourEntryID
+        WHERE  he.PayrollWeekEndingDate = @prwedate
+               AND he.WeekEndingDate = @wedate
+               AND he.UserName = @submittedby
                AND hea.ArchiveID IS NOT NULL;
-        
-        
+
+        -- STEP 3: DELETE FROM STAGING TABLE
         DELETE h
         FROM   elevant.EntryByWeek AS h
-        WHERE  h.WeekEndingDate = @WEDate
-               AND h.PayrollWeekEndingDate = @PRWEDate
-               AND h.UserName = @UserName;
+        WHERE  h.WeekEndingDate = @wedate
+               AND h.PayrollWeekEndingDate = @prwedate
+               AND h.UserName = @submittedby;
         
         COMMIT TRANSACTION;
-        SET @Commit = 1;
+        SET @committed = 1;
         SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
     END TRY
 
@@ -130,16 +129,15 @@ BEGIN
         IF XACT_STATE() <> 0
             ROLLBACK;
         SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
-        SET @no = ERROR_NUMBER();
+        SET @number = ERROR_NUMBER();
         SET @line = ERROR_LINE();
         SET @msg = ERROR_MESSAGE();
         SET @proc = ERROR_PROCEDURE();
-        EXECUTE elevant.ExceptionLog @no, @line, @msg, @proc, @UserName, @LogID;
+        EXECUTE elevant.ExceptionLog @number, @line, @msg, @proc, @submittedby, @logid;
     END CATCH
-
 END
-
 GO
+
 
 
 
