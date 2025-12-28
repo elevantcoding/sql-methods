@@ -12,7 +12,7 @@ GO
 -- create a stored procedure that can generate
 -- information for elevant.CipherString
 
-ALTER PROC [elevant].[GetCipherString](@stringtocipher nvarchar(128), @ciphered nvarchar(256) OUT)
+ALTER PROC [elevant].[GetCipherString](@stringtocipher varchar(128), @ciphered varchar(256) OUT)
 AS
 BEGIN
 	-- generate:
@@ -23,10 +23,10 @@ BEGIN
 	-- pass to CipherString and return @ciphered
 	DECLARE @sixDigit int;
 	DECLARE @randval tinyint;
-	DECLARE @getvals nvarchar(6);
-	DECLARE @ciph nvarchar(10);
+	DECLARE @getvals varchar(6);
+	DECLARE @ciph varchar(10);
 	DECLARE @getasc int;
-	DECLARE @padding nvarchar(128);
+	DECLARE @padding varchar(128);
 
 
 	SET @sixDigit = ABS(CHECKSUM(NEWID())) % 1000000;
@@ -52,5 +52,6 @@ BEGIN
 
 END
 GO
+
 
 
