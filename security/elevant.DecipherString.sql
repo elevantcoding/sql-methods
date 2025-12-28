@@ -1,31 +1,43 @@
-USE [SAMPLE]
-GO
-
-/****** Object:  UserDefinedFunction [elevant].[DecipherString]    Script Date: 12/28/2025 1:58:18 PM ******/
+/****** Object:  UserDefinedFunction [elevant].[DecipherString]    Script Date: 12/28/2025 5:17:24 PM ******/
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-
-
--- create function DecipherString as per VBA / Py DecipherString
---returns 128 nvarchar
-ALTER FUNCTION [elevant].[DecipherString](@cipherstring nvarchar(256))
-RETURNS nvarchar(128)
+-- decipher a hex string created using elevant.CipherString or VBA StringCipher.CipherString or Py cipher.cipher_string
+ALTER FUNCTION [elevant].[DecipherString](@cipherstring varchar(256))
+RETURNS varchar(128)
 AS
 BEGIN
-
-	DECLARE @prefixlen int; DECLARE @maxstrlen int; DECLARE @i int;
-	DECLARE @hex varchar(2); DECLARE @string nvarchar(256);
-	DECLARE @prefix nvarchar(21); DECLARE @numciph nvarchar(10); DECLARE @key nvarchar(10);
-	DECLARE @k int; DECLARE @deciphprefix nvarchar(21); DECLARE @char nvarchar(1);
-	DECLARE @chars nvarchar(21); DECLARE @strLen int; DECLARE @v int;
-	DECLARE @randval int; DECLARE @altervals nvarchar(6); DECLARE @paddedstring nvarchar(128);
-	DECLARE @availablelen int; DECLARE @spacing int; DECLARE @s int; DECLARE @p int;
-	DECLARE @loops int; DECLARE @loopcount int; DECLARE @altervalsorig nvarchar(6)
-	DECLARE @getasc int; DECLARE @getval int; DECLARE @addasc int; DECLARE @addchar nvarchar(1);
+	DECLARE @prefixlen int;
+	DECLARE @maxstrlen int;
+	DECLARE @i int;
+	DECLARE @hex varchar(2);
+	DECLARE @string varchar(256);
+	DECLARE @prefix varchar(21);
+	DECLARE @numciph varchar(10);
+	DECLARE @key varchar(10);
+	DECLARE @k int;
+	DECLARE @deciphprefix varchar(21);
+	DECLARE @char varchar(1);
+	DECLARE @chars varchar(21);
+	DECLARE @strLen int;
+	DECLARE @v int;
+	DECLARE @randval int;
+	DECLARE @altervals varchar(6);
+	DECLARE @paddedstring varchar(128);
+	DECLARE @availablelen int;
+	DECLARE @spacing int;
+	DECLARE @s int;
+	DECLARE @p int;
+	DECLARE @loops int;
+	DECLARE @loopcount int;
+	DECLARE @altervalsorig varchar(6)
+	DECLARE @getasc int;
+	DECLARE @getval int;
+	DECLARE @addasc int;
+	DECLARE @addchar varchar(1);
 
 	SET @prefixlen = 21;
 	SET @maxstrlen = 128;
@@ -134,29 +146,32 @@ BEGIN
 	SET @altervalsorig = @altervals;
 	SET @altervals = LEFT(@altervals, @v);
 	SET @loopcount = 1;
+	SET @loopcount = 1
 
 	WHILE @loopcount <= @loops
 		BEGIN
-			IF @i > @strLen SET @i = 1;
-
+						
+			SET @char = SUBSTRING(@string, @i, 1)
+			SET @getasc = ASCII(@char)
+			SET @getval = CAST(SUBSTRING(@altervals, @v, 1) As INT)
+			SET @addasc = @getasc ^ @getval
+			SET @addchar = CHAR(@addasc)			
+			SET @string = STUFF(@string, CHARINDEX(@char, @string, @i),1, @addchar)
+			
+			SET @i = @i + 1
+			IF @i > @strLen SET @i = 1;			
+			
+			SET @v = @v - 1			
 			IF @v = 0
 				BEGIN
 					IF LEN(@altervals) < 6 SET @altervals = @altervalsorig
 					SET @v = LEN(@altervals)
 					SET @altervals = elevant.GetAlterVals(@altervals, 0)
 				END
-			SET @char = SUBSTRING(@string, @i, 1)
-			SET @getasc = ASCII(@char)
-			SET @getval = CAST(SUBSTRING(@altervals, @v, 1) As INT)
-			SET @addasc = @getasc ^ @getval
-			SET @addchar = CHAR(@addasc)
-			SET @string = elevant.ReplaceCharAtIndex(@string, @i, @addchar)
-			SET @i = @i + 1
-			SET @v = @v - 1
+			
 			SET @loopcount = @loopcount + 1
 		END
-
-RETURN @string
+	RETURN @string
 END
 GO
 
