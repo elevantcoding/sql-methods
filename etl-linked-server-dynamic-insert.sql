@@ -1,12 +1,12 @@
-IF @@SERVERNAME LIKE '%DEVELOPER%'
-    USE GBLDBSYSTEM
+IF @@SERVERNAME LIKE '%LOCALSERVERNAME%'
+    USE DATABASENAME
     GO
 
     DECLARE @devrowcount int;
     DECLARE @azurerowcount int;
     DECLARE @schema sysname;
     DECLARE @table sysname;
-    DECLARE @devsql nvarchar(max);
+    DECLARE @local nvarchar(max);
     DECLARE @azuresql nvarchar(max);
     DECLARE @sql nvarchar(max);
     DECLARE @cols nvarchar(max);
@@ -17,19 +17,17 @@ IF @@SERVERNAME LIKE '%DEVELOPER%'
     DECLARE @getrowcount int;
     
     -- specify table name to update, use for sys tables and function calls
-    SET @schema = 'dbo'
-    SET @table = 'tblEdits'
+    SET @schema = 'SchemaName'
+    SET @table = 'TableName'
 
-    -- does table exist?
+    -- get table recordcounts from local and Azure / uses Azure as linked server
+    SET @local = N'SELECT @recordcount = COUNT(*) FROM ' + QUOTENAME(@schema) + '.' + QUOTENAME(@table) + ';'
+    EXEC sp_executesql @local, N'@recordcount INT OUTPUT', @devrowcount OUTPUT;
 
-    -- get table recordcounts from Dev and Azure
-    SET @devsql = N'SELECT @recordcount = COUNT(*) FROM ' + QUOTENAME(@schema) + '.' + QUOTENAME(@table) + ';'
-    EXEC sp_executesql @devsql, N'@recordcount INT OUTPUT', @devrowcount OUTPUT;
-
-    SET @azuresql = N'SELECT @recordcount = COUNT(*) FROM [AZURE].[GBLDBSYSTEM].' + QUOTENAME(@schema) + '.' + QUOTENAME(@table) + ';'
+    SET @azuresql = N'SELECT @recordcount = COUNT(*) FROM [AZURE].[DATABASENAME].' + QUOTENAME(@schema) + '.' + QUOTENAME(@table) + ';'
     EXEC sp_executesql @azuresql, N'@recordcount INT OUTPUT', @azurerowcount OUTPUT;
 
-    -- if matching rowcount, assume nothing to update, return
+    -- if matching rowcount, nothing to update, return
     IF @devrowcount = @azurerowcount
         BEGIN
             PRINT 'Matching row counts.';
@@ -39,7 +37,7 @@ IF @@SERVERNAME LIKE '%DEVELOPER%'
     -- initialize row count
     SET @getrowcount = 0;
 
-    -- string aggregate column names for @gettable for insert and one as table alias a. - dbo schema, no rowversion columns
+    -- string aggregate column names for @gettable for insert and one as table alias a., do not include computed or rowversion columns
     SELECT 
         @cols = STRING_AGG(CONCAT('[',c.name,']'), ', '),
         @colsalias = STRING_AGG(CONCAT('a.[',c.name,']'), ', ')
@@ -55,8 +53,8 @@ IF @@SERVERNAME LIKE '%DEVELOPER%'
                                
             
     -- get @schema, @table key column and determine whether is identity
-    SELECT @keycol = dbo.GetKeyColumn(@schema, @table);
-    SELECT @isidentity = dbo.KeyColIsIdentity(@schema, @table);
+    SELECT @keycol = dbo.GetPrimaryKeyCol(@schema, @table);
+    SELECT @isidentity = dbo.PrimaryKeyColIsIdentity(@schema, @table);
     
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
@@ -72,7 +70,7 @@ IF @@SERVERNAME LIKE '%DEVELOPER%'
                       N'SET IDENTITY_INSERT ' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table) + N' ON; '
                     + N'INSERT INTO ' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table) + N'(' + @cols 
                     + N') SELECT ' + @colsalias 
-                    + N' FROM [AZURE].[GBLDBSYSTEM].' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table) + ' a LEFT JOIN ' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table)
+                    + N' FROM [AZURE].[DATABASENAME].' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table) + ' a LEFT JOIN ' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table)
                     + N' b ON a.' + QUOTENAME(@keycol) + N' = b.' + QUOTENAME(@keycol) + N' WHERE b.' + QUOTENAME(@keycol) + N' IS NULL; '
                     + N' SET @rowsinserted = @@ROWCOUNT; '
                     + N'SET IDENTITY_INSERT ' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table) + N' OFF;';
@@ -82,7 +80,7 @@ IF @@SERVERNAME LIKE '%DEVELOPER%'
                 SET @sql =
                       N'INSERT INTO ' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table) + N'(' + @cols + N') '
                     + N'SELECT ' + @colsalias
-                    + N' FROM [AZURE].[GBLDBSYSTEM].' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table) + N' a LEFT JOIN ' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table)
+                    + N' FROM [AZURE].[DATABASENAME].' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table) + N' a LEFT JOIN ' + QUOTENAME(@schema) + N'.' + QUOTENAME(@table)
                     + N' b ON a.' + QUOTENAME(@keycol) + N' = b.' + QUOTENAME(@keycol) + N' WHERE b.' + QUOTENAME(@keycol) + N' IS NULL; '
                     + N' SET @rowsinserted = @@ROWCOUNT; '
                 END
@@ -107,4 +105,5 @@ IF @@SERVERNAME LIKE '%DEVELOPER%'
 
     -- display row count
     SELECT RowsInserted = @getrowcount;
+
 
