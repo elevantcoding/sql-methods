@@ -13,12 +13,12 @@ All cryptographic operations intentionally use `VARCHAR` instead of `NVARCHAR`.
 Mixing VARCHAR and NVARCHAR caused representation mismatch, which produced incorrect output.
 
 # Example
-If input string = 'myString', multiple outputs of the same input produce different results:
-DECLARE @originalstring varchar(128);
-DECLARE @cipheredstring = varchar(256);
-SET @originalstring = 'myString'
-EXEC elevant.GetCipherString @originalstring, @ciphered = @cipherstring OUTPUT
-SELECT @cipheredstring AS CipheredString
+If input string = 'myString', multiple outputs of the same input produce different results:  
+DECLARE @originalstring varchar(128);  
+DECLARE @cipheredstring = varchar(256);  
+SET @originalstring = 'myString'  
+EXEC elevant.GetCipherString @originalstring, @ciphered = @cipherstring OUTPUT  
+SELECT @cipheredstring AS CipheredString  
 
 47473B3A7B3B753A3B3B623B606F757B473A7262706D28287D253D51733A3363653477757C45203B554C6A6A356136502E626A5E59275E24755E2B5B71796A377E363B54322A543C377C7C7753432C642E683A5B6E4B6947374F477523203751246F5B6F797276355973574D727A69576E7B7C6B20746E7C747A765734645138
 
