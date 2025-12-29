@@ -13,7 +13,7 @@ GO
 
 CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
     ON DATABASE
-    FOR DROP_TABLE, DROP_VIEW
+    FOR DROP_TABLE, DROP_VIEW, DROP_FUNCTION, DROP_PROCEDURE
     AS BEGIN
            DECLARE @objname AS SYSNAME;
            DECLARE @msg AS NVARCHAR (4000);
@@ -38,6 +38,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
        END
 
 GO
+
 
 
 
