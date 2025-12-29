@@ -23,7 +23,8 @@ CASE
     ELSE 
         '2050-12-31'
 END AS EndDate
-FROM elevant.RateTable r
+FROM dbo.RateTable r
 ORDER BY r.EmployeeID, r.PositionID
+
 
 
