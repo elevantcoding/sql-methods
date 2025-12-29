@@ -2,7 +2,7 @@
 -- stored with daily hour columns into a normalized per-day row format
 -- this view is used by SubmitWeeklyHours to generate row-based entries for payroll (see: atomic-serialized-transaction.sql)
 
-CREATE VIEW elevant.[View_UnpivotAndTransformEntryByWeek]
+CREATE VIEW dbo.[View_UnpivotAndTransformEntryByWeek]
 AS
 SELECT
     HourEntryID,
@@ -61,9 +61,9 @@ FROM (
         h.Notes,
         h.NotesExist,
         h.ModifiedDateTime
-    FROM elevant.EntryByWeek h
-	INNER JOIN elevant.Employee en ON h.EmployeeID = en.EmployeeID
-	INNER JOIN elevant.EmployeeTypes et ON en.[TypeID] = et.[TypeID]
+    FROM dbo.EntryByWeek h
+	INNER JOIN dbo.Employee en ON h.EmployeeID = en.EmployeeID
+	INNER JOIN dbo.EmployeeTypes et ON en.[TypeID] = et.[TypeID]
 ) p
 UNPIVOT (
     HoursWorked FOR [DayOfWeek] IN (Mon, Tue, Wed, Thu, Fri, Sat, Sun)
@@ -71,6 +71,7 @@ UNPIVOT (
 
 WHERE HoursWorked <> 0
 GO
+
 
 
 
