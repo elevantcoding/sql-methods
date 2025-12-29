@@ -15,7 +15,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
     ON DATABASE
     FOR DROP_TABLE, DROP_VIEW, DROP_FUNCTION, DROP_PROCEDURE
     AS BEGIN
-            SET NOCOUNT ON;
+           SET NOCOUNT ON;
     
            DECLARE @objname AS SYSNAME;
            DECLARE @msg AS NVARCHAR (4000);
@@ -40,6 +40,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
        END
 
 GO
+
 
 
 
