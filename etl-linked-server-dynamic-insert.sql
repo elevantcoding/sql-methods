@@ -106,4 +106,81 @@ IF @@SERVERNAME LIKE '%LOCALSERVERNAME%'
     -- display row count
     SELECT RowsInserted = @getrowcount;
 
+-- function to return the name of a table's primary key column
+ALTER FUNCTION [dbo].[GetPrimaryKeyCol]
+(@schemaname sysname, @tablename sysname)
+RETURNS sysname
+AS
+BEGIN
+    DECLARE @columnname AS sysname;
+    SELECT @columnname = c.name
+    FROM   sys.tables AS t
+           INNER JOIN
+           sys.schemas AS s
+           ON t.schema_id = s.schema_id
+           INNER JOIN
+           sys.indexes AS i
+           ON t.object_id = i.object_id
+              AND i.is_primary_key = 1
+           INNER JOIN
+           sys.index_columns AS icx
+           ON i.object_id = icx.object_id
+              AND i.index_id = icx.index_id
+           INNER JOIN
+           sys.columns AS c
+           ON icx.object_id = c.object_id
+              AND icx.column_id = c.column_id
+           INNER JOIN
+           sys.types AS ty
+           ON c.user_type_id = ty.user_type_id
+           LEFT OUTER JOIN
+           sys.identity_columns AS ic
+           ON t.object_id = ic.object_id
+              AND c.column_id = ic.column_id
+    WHERE s.name = @schemaname
+    	AND t.name = @tablename;
+    RETURN @columnname;
+END
+GO
+
+-- function to return bit / boolean as to whether a primary key column is an identity column
+ALTER FUNCTION [dbo].[PrimaryKeyColIsIdentity]
+(@schemaname sysname, @tablename sysname)
+RETURNS BIT
+AS
+BEGIN
+    DECLARE @isidentity AS BIT;
+    SET @isidentity = 0;
+    SELECT @isidentity = CASE WHEN ic.column_id IS NOT NULL THEN 1 ELSE 0 END
+    FROM   sys.tables AS t
+           INNER JOIN
+           sys.schemas AS s
+           ON t.schema_id = s.schema_id
+           INNER JOIN
+           sys.indexes AS i
+           ON t.object_id = i.object_id
+              AND i.is_primary_key = 1
+           INNER JOIN
+           sys.index_columns AS icx
+           ON i.object_id = icx.object_id
+              AND i.index_id = icx.index_id
+           INNER JOIN
+           sys.columns AS c
+           ON icx.object_id = c.object_id
+              AND icx.column_id = c.column_id
+           INNER JOIN
+           sys.types AS ty
+           ON c.user_type_id = ty.user_type_id
+           LEFT OUTER JOIN
+           sys.identity_columns AS ic
+           ON t.object_id = ic.object_id
+              AND c.column_id = ic.column_id
+    WHERE s.name = @schemaname
+           AND t.name = @tablename;
+    RETURN @isidentity;
+END
+
+GO
+
+
 
