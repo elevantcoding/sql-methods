@@ -38,7 +38,6 @@ BEGIN
 	DECLARE @hexstring varchar(256);
 	DECLARE @hexvalue varchar(2);
 
-	-- handle input errors
 	SET @string = TRIM(@string);
 
 	IF LEN(@string) = 0
@@ -149,6 +148,7 @@ BEGIN
 	RETURN @hexstring
 END
 GO
+
 
 
 
