@@ -1,3 +1,10 @@
+' =======================================================================================
+' this script performs as safe, dynamic, differential data synchronization between a local
+' SQL Server database and an Azure SQL database (via linked server).  It updates a local table by inserting
+' only the missing rows found in Azure without hardcoding column names and allowing identity insert for
+' identity columns only
+=========================================================================================
+
 IF @@SERVERNAME LIKE '%LOCALSERVERNAME%'
     USE DATABASENAME
     GO
@@ -181,6 +188,7 @@ BEGIN
 END
 
 GO
+
 
 
 
