@@ -12,33 +12,40 @@ GO
 -- both with and without brackets
 
 CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
-    ON DATABASE
+     ON DATABASE
     FOR DROP_TABLE, DROP_VIEW, DROP_FUNCTION, DROP_PROCEDURE
     AS BEGIN
-           SET NOCOUNT ON;
-    
-           DECLARE @objname AS SYSNAME;
+           DECLARE @found SYSNAME;
+           DECLARE @objname AS NVARCHAR (255);
            DECLARE @msg AS NVARCHAR (4000);
            DECLARE @eventinfo AS XML = EVENTDATA();
-
-           SELECT @objname = @eventinfo.value('(/EVENT_INSTANCE/ObjectName)[1]', 'SYSNAME');
-
-           IF EXISTS (
-                SELECT 1 FROM sys.objects o
-                INNER JOIN sys.sql_modules AS m ON m.object_id = o.object_id
-                WHERE o.schema_id = 1 --if schema is applicable, your schema
-                AND m.[definition] LIKE '%[' + @objname + ']%' -- eventdata object
-           )
+           
+           SELECT @objname = @eventinfo.value('(/EVENT_INSTANCE/ObjectName)[1]', 'NVARCHAR(255)');
+                      
+           SELECT TOP (1) @found = QUOTENAME(s.name) + '.' + QUOTENAME(o.name) + ' (' + o.type + ')'
+           FROM   sys.objects AS o
+                  INNER JOIN sys.sql_modules AS m ON m.object_id = o.object_id
+                  INNER JOIN sys.schemas s ON s.schema_id = o.schema_id
+           WHERE  s.name = 'dbo'
+                  AND (
+                        m.definition LIKE '%[^a-zA-Z0-9_]' + @objname + '[^a-zA-Z0-9_]%' OR
+                        m.definition LIKE @objname + '[^a-zA-Z0-9_]%' OR
+                        m.definition LIKE '%[^a-zA-Z0-9_]' + @objname OR
+                        m.definition = @objname
+                       )
+           
+           IF @found IS NOT NULL
                BEGIN
-                   SET @msg = @objname + ' is referenced in a procedure with dynamic sql and cannot be dropped.';
+                   SET @msg = @objname + ' is referenced in dynamic sql of ' + @found;
                    THROW 50001, @msg, 1;
                END
            ELSE
                SET @msg = @objname + ' has been dropped.';
-               PRINT @msg;
+           PRINT @msg;
        END
-
 GO
+
+
 
 
 
