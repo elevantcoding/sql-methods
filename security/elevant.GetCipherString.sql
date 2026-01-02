@@ -30,7 +30,7 @@ BEGIN
 
 
 	SET @sixDigit = ABS(CHECKSUM(NEWID())) % 1000000;
-	SET @getvals = FORMAT(@sixDigit, '000000');
+	SET @getvals = RIGHT('000000' + CAST(@sixDigit As varchar(6)), 6);
 	SET @randval = (ABS(CHECKSUM(NEWID())) % 5) + 2;
 
 	SET @ciph = '';
@@ -52,6 +52,7 @@ BEGIN
 
 END
 GO
+
 
 
 
