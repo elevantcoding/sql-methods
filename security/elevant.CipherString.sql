@@ -76,7 +76,7 @@ BEGIN
 		END
 
 	-- create prefix / key
-	SET @prefix = CONCAT(@altervals, CAST(@randval AS varchar(1)), CAST(@v AS varchar(1)), FORMAT(@strLen,'000'))
+	SET @prefix = CONCAT(@altervals, CAST(@randval AS varchar(1)), CAST(@v AS varchar(1)), RIGHT('000' + CAST(@strLen AS varchar(3)), 3))
 
 	-- use @ciph to cipher the prefix
 	SET @key = N'0123456789';
@@ -148,6 +148,7 @@ BEGIN
 	RETURN @hexstring
 END
 GO
+
 
 
 
