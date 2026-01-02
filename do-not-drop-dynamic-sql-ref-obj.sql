@@ -40,7 +40,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
            
           IF @found IS NOT NULL
                BEGIN
-                   SET @msg = @objname + ' is referenced in ' + @found + ' and cannot be dropped.';
+                   SET @msg = @objname + ' appears in the definition of ' + @found + ' and cannot be dropped.';
                    THROW 50001, @msg, 1;
                END
           ELSE
@@ -48,6 +48,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
           PRINT @msg;
        END
 GO
+
 
 
 
