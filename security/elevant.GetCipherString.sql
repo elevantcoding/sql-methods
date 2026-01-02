@@ -50,8 +50,12 @@ BEGIN
 		END
 	SET @ciphered = elevant.CipherString(@stringtocipher, @getvals, @randval, @ciph, @padding)
 
+	IF NULLIF(TRIM(@ciphered),'') IS NULL
+		THROW 50001, 'Invalid cipher format.', 1;
+
 END
 GO
+
 
 
 
