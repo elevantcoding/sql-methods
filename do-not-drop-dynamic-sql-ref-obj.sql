@@ -15,18 +15,20 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
      ON DATABASE
     FOR DROP_TABLE, DROP_VIEW, DROP_FUNCTION, DROP_PROCEDURE
     AS BEGIN
-           DECLARE @found SYSNAME;
-           DECLARE @objname AS NVARCHAR (255);
-           DECLARE @msg AS NVARCHAR (4000);
-           DECLARE @eventinfo AS XML = EVENTDATA();
+          SET NOCOUNT ON;
+     
+          DECLARE @found SYSNAME;
+          DECLARE @objname AS NVARCHAR (255);
+          DECLARE @msg AS NVARCHAR (4000);
+          DECLARE @eventinfo AS XML = EVENTDATA();
            
-           SELECT @objname = @eventinfo.value('(/EVENT_INSTANCE/ObjectName)[1]', 'NVARCHAR(255)');
+          SELECT @objname = @eventinfo.value('(/EVENT_INSTANCE/ObjectName)[1]', 'NVARCHAR(255)');
                       
-           SELECT TOP (1) @found = QUOTENAME(s.name) + '.' + QUOTENAME(o.name) + ' (' + o.type + ')'
-           FROM   sys.objects AS o
+          SELECT TOP (1) @found = QUOTENAME(s.name) + '.' + QUOTENAME(o.name) + ' (' + o.type + ')'
+          FROM   sys.objects AS o
                   INNER JOIN sys.sql_modules AS m ON m.object_id = o.object_id
                   INNER JOIN sys.schemas s ON s.schema_id = o.schema_id
-           WHERE  s.name = 'dbo'
+          WHERE  s.name = 'dbo'
                   AND (
                         m.definition LIKE '%[^a-zA-Z0-9_]' + @objname + '[^a-zA-Z0-9_]%' OR
                         m.definition LIKE @objname + '[^a-zA-Z0-9_]%' OR
@@ -34,16 +36,17 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
                         m.definition = @objname
                        )
            
-           IF @found IS NOT NULL
+          IF @found IS NOT NULL
                BEGIN
                    SET @msg = @objname + ' is referenced in dynamic sql of ' + @found;
                    THROW 50001, @msg, 1;
                END
-           ELSE
+          ELSE
                SET @msg = @objname + ' has been dropped.';
-           PRINT @msg;
+          PRINT @msg;
        END
 GO
+
 
 
 
