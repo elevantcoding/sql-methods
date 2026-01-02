@@ -10,7 +10,7 @@ GO
 -- This code may be adapted to what works for your environment and in order to effectively identify the object,
 -- such as looking for the fully-qualified object name including schema and/or using OR for identifying the object
 -- both with and without brackets
--- NOTE In environments wheer database collation differs from server collation, comparisons against sys.sql_modules.definition
+-- NOTE In environments where database collation differs from server collation, comparisons against sys.sql_modules.definition
 -- may require explicit COLLATE normalization.
 
 CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
@@ -48,6 +48,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
           PRINT @msg;
        END
 GO
+
 
 
 
