@@ -5,11 +5,13 @@ GO
 -- This trigger can.
 -- dynamic sql; ddl trigger; prevent accidental drop; dependency management; sql_modules search; alter view safety
 
--- NOTE: this trigger assumes your database uses meaningful and structured object naming conventions so that the
+-- NOTE this trigger assumes your database uses meaningful and structured object naming conventions so that the
 -- object names are unlikely to appear coincidentally in unrelated contexts.
 -- This code may be adapted to what works for your environment and in order to effectively identify the object,
 -- such as looking for the fully-qualified object name including schema and/or using OR for identifying the object
 -- both with and without brackets
+-- NOTE In environments wheer database collation differs from server collation, comparisons against sys.sql_modules.definition
+-- may require explicit COLLATE normalization.
 
 CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
      ON DATABASE
@@ -46,6 +48,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
           PRINT @msg;
        END
 GO
+
 
 
 
