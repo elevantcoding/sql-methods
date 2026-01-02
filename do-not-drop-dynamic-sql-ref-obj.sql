@@ -27,7 +27,6 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
                 SELECT 1 FROM sys.objects o
                 INNER JOIN sys.sql_modules AS m ON m.object_id = o.object_id
                 WHERE o.schema_id = 1 --if schema is applicable, your schema
-                AND o.[type] = 'P' -- procedures
                 AND m.[definition] LIKE '%[' + @objname + ']%' -- eventdata object
            )
                BEGIN
@@ -40,6 +39,7 @@ CREATE TRIGGER [DoNotDropDynamicSQLRefObjects]
        END
 
 GO
+
 
 
 
