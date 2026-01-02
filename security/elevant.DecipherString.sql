@@ -79,32 +79,26 @@ BEGIN
 
 	SET @prefix = @deciphprefix
 
+	IF @prefix LIKE '%[^0-9]%'
+		RETURN 'N'
+
 	-- get strLen
 	SET @chars = RIGHT(@prefix, 3)
-	IF @chars LIKE '%[^0-9]%'
-		RETURN N''
-	ELSE
-		SET @strLen = CAST(@chars AS INT);
+	SET @strLen = CAST(@chars AS INT);
 
 	-- trim strLen from prefix
 	SET @prefix = LEFT(@prefix, LEN(@prefix) - 3)
 
 	-- get v
 	SET @char = RIGHT(@prefix, 1)
-	IF @char LIKE '%[^0-9]%'
-		RETURN N''
-	ELSE
-		SET @v = CAST(@char AS INT)
+	SET @v = CAST(@char AS INT)
 
 	-- trim v from prefix
 	SET @prefix = LEFT(@prefix, LEN(@prefix) - 1)
 
 	-- get rand val
 	SET @char = RIGHT(@prefix, 1)
-	IF @char LIKE '%[^0-9]%'
-		RETURN N''
-	ELSE
-		SET @randval = CAST(@char AS INT)
+	SET @randval = CAST(@char AS INT)
 
 	-- trim randval from prefix
 	SET @prefix = LEFT(@prefix, LEN(@prefix) - 1)
@@ -174,5 +168,6 @@ BEGIN
 	RETURN @string
 END
 GO
+
 
 
