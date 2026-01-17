@@ -26,10 +26,10 @@ BEGIN
 
     SET @stringone = LOWER(@stringone);
     SET @stringtwo = LOWER(@stringtwo);
-    SET @stringone = dbo.NormalizeString(@stringone);
-    SET @stringtwo = dbo.NormalizeString(@stringtwo);
-    SET @stringone = dbo.CleanString(@stringone);
-    SET @stringtwo = dbo.CleanString(@stringtwo);
+    SET @stringone = elevant.NormalizeString(@stringone);
+    SET @stringtwo = elevant.NormalizeString(@stringtwo);
+    SET @stringone = elevant.CleanString(@stringone);
+    SET @stringtwo = elevant.CleanString(@stringtwo);
     SET @firstlen = LEN(@stringone);
     SET @secondlen = LEN(@stringtwo);
 
