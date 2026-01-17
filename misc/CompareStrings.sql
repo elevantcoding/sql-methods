@@ -1,5 +1,6 @@
 -- string comparison for detecting near-duplicates or other purposes
-
+-- return percentage difference: 1 = completely different, no similarity detected; 0 = identical
+-- does not perform a binary compare in order to detect things like A vs a.
 ALTER FUNCTION [dbo].[CompareStrings]
 (@stringone NVARCHAR (100), @stringtwo NVARCHAR (100))
 RETURNS FLOAT
