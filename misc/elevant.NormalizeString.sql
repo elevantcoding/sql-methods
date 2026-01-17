@@ -1,4 +1,4 @@
-ALTER FUNCTION [dbo].[NormalizeString]
+ALTER FUNCTION [elevant].[NormalizeString]
 (@input NVARCHAR (MAX))
 RETURNS NVARCHAR (MAX)
 AS
