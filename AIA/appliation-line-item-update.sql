@@ -11,7 +11,7 @@ Logic Notes:
 - Unbound Integration: Engineered for stateless calls from MS Access unbound forms.
 - Stored Materials Netting: Automatically adjusts available stored materials 
   balance when materials are utilized in the current billing period.
-- Validation: Enforces business rules to ensure (Work Completed + Stored Materials) 
+- Validation: Enforces business rules to ensure (Work Completed) 
   never exceeds the Total Scheduled Value.
 - Transactional Safety: Wrapped in TRY/CATCH blocks with XACT_ABORT to ensure 
   arithmetic failures result in a full rollback of the billing record.
