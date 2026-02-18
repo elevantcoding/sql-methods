@@ -1,5 +1,6 @@
 -- AIA database project using Access as front-end application
 -- avoid throw if call proc from Access, throw otherwise if err
+-- AIA Schedule of Values line items entered in multiplicity can be marked approved as a batch
 
 USE [AIA]
 GO
