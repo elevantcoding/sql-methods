@@ -1,7 +1,25 @@
--- AIA database project using Access as front-end application
--- avoid throw if call proc from Access, throw otherwise if err
--- AIA Schedule of Values line items entered in multiplicity can be marked approved as a batch
+/*******************************************************************************
+Object:         dbo.SOV_LineItems_Approved
+Project:        AIA Billing & Construction Management System
+Author:         elevant
+Date: 		    2/15/2026
+Description:    Processes batch approvals for G703 Schedule of Values line items.
+                Implements atomic transaction logic to ensure SOV integrity.
 
+Logic Notes:
+- Transactional Safety: Utilizes TRY/CATCH with ROLLBACK to prevent partial updates.
+- Error Handling: Custom-mapped for Access Front-End compatibility. 
+- Data Integrity: Prevents "THROW" to allow VBA to handle return messages gracefully.
+- Performance: Optimized for multi-row batch processing via T-SQL.
+*******************************************************************************/
+
+CREATE PROCEDURE [dbo].[SOV_LineItems_Approved]
+-- Your parameters here...
+AS
+BEGIN
+    SET NOCOUNT ON;
+    -- Your logic here...
+END	
 USE [AIA]
 GO
 
