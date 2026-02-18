@@ -19,13 +19,8 @@ Logic Notes:
   VBA/UI communication.
 *******************************************************************************/
 
-CREATE PROCEDURE [dbo].[Application_LineItems_AddEdit]
--- Your Parameters here...
-AS
-BEGIN
-    SET NOCOUNT ON;
-    -- Your Logic here...
-ENDALTER PROC [dbo].[Applications_LineItems_AddEdit] (@AIAAppKey INT, @AIASOVKey INT, @AmtG DECIMAL (18,2), @AmtH DECIMAL (18,2), @UserID INT,
+-- stored procedure to write new lines to table_AIA_Applications_LineItems
+ALTER PROC [dbo].[Applications_LineItems_AddEdit] (@AIAAppKey INT, @AIASOVKey INT, @AmtG DECIMAL (18,2), @AmtH DECIMAL (18,2), @UserID INT,
 @SPSuccess BIT OUT, @UpdateSuccess INT OUT, @IsErrID INT OUT)
 AS 
 BEGIN
@@ -34,6 +29,10 @@ BEGIN
 
 	DECLARE @OriginApp SYSNAME;
 	DECLARE @RightNow DATETIME;
+	DECLARE @AvailSOVLineItemAmt DECIMAL (18,2);
+	DECLARE @AvailStoredLineItemAmt DECIMAL (18,2);
+	DECLARE @RowsAffected INT;
+
 
 	-- where sp is called from
 	SET @OriginApp = APP_NAME()
@@ -49,6 +48,23 @@ BEGIN
 	SET XACT_ABORT ON;
 	BEGIN TRY
 		BEGIN TRAN
+
+			-- get sov line item remaining value, materials presently stored			
+			SELECT @AvailSOVLineItemAmt = E - F, @AvailSOVLineItemAmt = H
+			FROM dbo.view_AIA_App_Last
+			WHERE AIAAppKey = @AIAAppKey AND AIASOVKey = @AIASOVKey;
+			
+			-- only vaidate new labor against remaining balance, not stored materials utilization on this app
+			IF @AmtG > @AvailSOVLineItemAmt
+				BEGIN -- jump to catch
+					RAISERROR('Total billing (Work + Utilization) exceeds Scheduled Value.', 16, 1);
+				END
+
+			-- jump to catch
+			IF @AmtH > @AvailStoredLineItemAmt
+				BEGIN
+					RAISERROR('Amount exceeds Available Stored Materials.', 16, 1);
+				END
 		
 			-- attempt update
 			IF EXISTS( 
@@ -58,18 +74,20 @@ BEGIN
 				)
 				BEGIN
 					UPDATE appli
-					SET appli.AIAAppDetailG = @AmtG, 
+					SET appli.AIAAppDetailG = @AmtG + @AmtH, 
 						appli.AIAAppDetailHUtilized = @AmtH, 
 						appli.AIAAppDetailEdited = @RightNow,
 						appli.AIAAppDetailEditedBy = @UserID
 					FROM dbo.table_AIA_Applications_LineItems appli
 					WHERE appli.AIAAppKey = @AIAAppKey
 						AND appli.AIASOVKey = @AIASOVKey
-						AND (AIAAppDetailG <> @AmtG
+						AND (AIAAppDetailG <> (@AmtG + @AmtH)
 							OR AIAAppDetailHUtilized <> @AmtH
 							);
-	
-					IF @@ROWCOUNT = 1 
+					
+					SET @RowsAffected = @@ROWCOUNT
+					
+					IF @RowsAffected = 1 
 						SET @UpdateSuccess = 2;
 					ELSE
 						SET @UpdateSuccess = 3;
@@ -79,9 +97,11 @@ BEGIN
 				BEGIN
 					INSERT INTO dbo.table_AIA_Applications_LineItems
 					(AIAAppKey, AIASOVKey, AIAAppDetailG, AIAAppDetailHUtilized, AIAAppDetailCreated, AIAAppDetailCreatedBy, AIAAppDetailEdited, AIAAppDetailEditedBy)
-					VALUES (@AIAAppKey, @AIASOVKey, @AmtG, @AmtH, @RightNow, @UserID, @RightNow, @UserID);	
+					VALUES (@AIAAppKey, @AIASOVKey, (@AmtG + @AmtH), @AmtH, @RightNow, @UserID, @RightNow, @UserID);	
 
-					IF @@ROWCOUNT = 1 SET @UpdateSuccess = 1;
+					SET @RowsAffected = @@ROWCOUNT
+					
+					IF @RowsAffected = 1 SET @UpdateSuccess = 1;
 				END
 
 		COMMIT TRAN;
@@ -102,4 +122,3 @@ BEGIN
 	END CATCH
 END
 GO
-
