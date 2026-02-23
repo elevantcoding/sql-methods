@@ -13,7 +13,7 @@
 
 -- scalar functions referenced in this procedure are shown below the procedure definition
 
-CREATE PROCEDURE dbo.SubmitWeeklyHours
+CREATE PROCEDURE elevant.SubmitWeeklyHours
 @wedate DATE, @prwedate DATE, @submittedby VARCHAR (75), @committed BIT OUTPUT, @message NVARCHAR (255) OUTPUT, @logid INT OUTPUT
 AS
 BEGIN
@@ -32,7 +32,7 @@ BEGIN
 
     -- if no information found for specified parameters, exit procedure
     IF NOT EXISTS (SELECT 1
-                   FROM   dbo.EntryByWeek
+                   FROM   elevant.EntryByWeek
                    WHERE  PayrollWeekEndingDate = @prwedate
                           AND WeekEndingDate = @wedate
                           AND UserName = @submittedby)
@@ -47,15 +47,15 @@ BEGIN
         SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
         BEGIN TRANSACTION;
         
-        SET @nextpayrollnumber = dbo.GetNextPayrollNumber(@prwedate); -- determine the next available payroll batch number based on set-forth conditions
+        SET @nextpayrollnumber = elevant.GetNextPayrollNumber(@prwedate); -- determine the next available payroll batch number based on set-forth conditions
         SET @nextpayrollnumbertext = CAST (@nextpayrollnumber AS NVARCHAR (5)); -- convert to nvarchar per table design
 
         IF @nextpayrollnumber > 1 -- log a message to the edits table if not using the first sequence
-            INSERT INTO dbo.EditLog (FormName, EditDescription, UserName, EditDateTime)
-            VALUES ('dbo.EntryByWeek', 'Updated to Payroll Number ' + CONVERT (NVARCHAR (MAX), @nextpayrollnumbertext) + ' Due to Completed Payrolls Found on Payroll Week Ending Date ' + CONVERT (NVARCHAR (MAX), @prwedate), @submittedby, GETDATE());
+            INSERT INTO elevant.EditLog (FormName, EditDescription, UserName, EditDateTime)
+            VALUES ('elevant.EntryByWeek', 'Updated to Payroll Number ' + CONVERT (NVARCHAR (MAX), @nextpayrollnumbertext) + ' Due to Completed Payrolls Found on Payroll Week Ending Date ' + CONVERT (NVARCHAR (MAX), @prwedate), @submittedby, GETDATE());
 
         -- STEP 1: ARCHIVE
-        INSERT INTO dbo.EntryByWeek_Archive (HourEntryID, EmployeeID, EEMasterID, ContractNo, SubContract, WeekEndingDate, PayrollWeekEndingDate, PayrollNumber, 
+        INSERT INTO elevant.EntryByWeek_Archive (HourEntryID, EmployeeID, EEMasterID, ContractNo, SubContract, WeekEndingDate, PayrollWeekEndingDate, PayrollNumber, 
             [Shift], [Time], WorkCategory, FieldWorkCode, Mon, Tue, Wed, Thu, Fri, Sat, Sun, UserName, Notes, NotesExist, ModifiedDateTime)
         SELECT h.HourEntryID,
                h.EmployeeID,
@@ -80,13 +80,13 @@ BEGIN
                h.Notes,
                h.NotesExist,
                h.ModifiedDateTime
-        FROM   dbo.EntryByWeek AS h
+        FROM   elevant.EntryByWeek AS h
         WHERE  h.WeekEndingDate = @wedate
                AND h.PayrollWeekEndingDate = @prwedate
                AND h.UserName = @submittedby;
         
         -- STEP 2: WRITE TO MAIN TABLE
-        INSERT INTO dbo.EntryByRow (ContractNo, EmployeeID, WorkDate, [Shift], CategoryCode, PayrollWeekEndingDate, PayrollNumber, WeekEndingDate, EngineeringSubContract, FieldWorkCode,
+        INSERT INTO elevant.EntryByRow (ContractNo, EmployeeID, WorkDate, [Shift], CategoryCode, PayrollWeekEndingDate, PayrollNumber, WeekEndingDate, EngineeringSubContract, FieldWorkCode,
             STHours, OTHours, DTHours, HourType, UserName, Notes, NotesExist, Submitted, Process, ModifiedDateTime, RecordTypeID, ArchiveID)
         SELECT he.ContractNo,
                he.EmployeeID,
@@ -110,8 +110,8 @@ BEGIN
                he.ModifiedDateTime,
                13 AS RecordTypeID,
                hea.ArchiveID
-        FROM   dbo.View_UnpivotAndTransformEntryByWeek AS he
-               INNER JOIN dbo.EntryByWeek_Archive AS hea ON he.HourEntryID = hea.HourEntryID
+        FROM   elevant.View_UnpivotAndTransformEntryByWeek AS he
+               INNER JOIN elevant.EntryByWeek_Archive AS hea ON he.HourEntryID = hea.HourEntryID
         WHERE  he.PayrollWeekEndingDate = @prwedate
                AND he.WeekEndingDate = @wedate
                AND he.UserName = @submittedby
@@ -119,7 +119,7 @@ BEGIN
 
         -- STEP 3: DELETE FROM STAGING TABLE
         DELETE h
-        FROM   dbo.EntryByWeek AS h
+        FROM   elevant.EntryByWeek AS h
         WHERE  h.WeekEndingDate = @wedate
                AND h.PayrollWeekEndingDate = @prwedate
                AND h.UserName = @submittedby;
@@ -137,13 +137,13 @@ BEGIN
         SET @line = ERROR_LINE();
         SET @msg = ERROR_MESSAGE();
         SET @proc = ERROR_PROCEDURE();
-        EXECUTE dbo.ExceptionLog @number, @line, @msg, @proc, @submittedby, @logid;
+        EXECUTE elevant.ExceptionLog @number, @line, @msg, @proc, @submittedby, @logid;
     END CATCH
 END
 GO
 
 -- find the next, sequential payroll batch number outside of batches marked complete and outside of batches in process
-CREATE FUNCTION dbo.[GetNextPayrollNumber]
+CREATE FUNCTION elevant.[GetNextPayrollNumber]
 (@prwedate DATE)
 RETURNS INT
 AS
@@ -152,12 +152,12 @@ BEGIN
     SET @nextpr = 1;
 
     WHILE EXISTS (SELECT 1
-                  FROM   dbo.PayrollBatchRecord
+                  FROM   elevant.PayrollBatchRecord
                   WHERE  PayrollWeekEndingDate = @prwedate
                          AND PayrollNumber = @nextpr
                          AND PayrollComplete = 1)
           OR EXISTS (SELECT 1
-                     FROM   dbo.PayrollInProcess
+                     FROM   elevant.PayrollInProcess
                      WHERE  PayrollWeekEndingDate = @prwedate
                             AND PayrollNumber = @nextpr)
         BEGIN
@@ -169,7 +169,7 @@ END
 GO
 
 -- sp exception log
-CREATE PROCEDURE dbo.[ExceptionLog]
+CREATE PROCEDURE elevant.[ExceptionLog]
 @number INT, @line INT, @msg NVARCHAR (4000), @proc SYSNAME, @username NVARCHAR (128), @logid INT = 0 OUTPUT
 AS
 BEGIN
@@ -183,10 +183,11 @@ BEGIN
     SET @source = 'Stored Procedure';
     SET @origin = 'SQL Server';
     
-    INSERT INTO dbo.ExceptionLog (ErrDate, ErrNo, ErrLine, ErrDesc, ErrSource, ProcName, ModType, UserName, ErrOrigin)
+    INSERT INTO elevant.ExceptionLog (ErrDate, ErrNo, ErrLine, ErrDesc, ErrSource, ProcName, ModType, UserName, ErrOrigin)
     VALUES (@date, @number, @line, @msg, @source, @proc, 'SP', @username, @origin);
 	SET @logid = SCOPE_IDENTITY();
 END
 GO
+
 
 
