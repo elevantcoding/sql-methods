@@ -1,3 +1,51 @@
+CREATE FUNCTION [elevant].[GetAlterVals](@getvals nvarchar(20), @cipher bit)
+RETURNS nvarchar(20)
+AS
+BEGIN
+	
+	DECLARE @v int;
+	DECLARE @char nvarchar(1);
+	DECLARE @num tinyint;
+	DECLARE @stepVal smallint;
+	DECLARE @returnvals nvarchar(6);
+	DECLARE @iscipher bit;
+
+	IF LEN(@getvals) = 0
+		RETURN @getvals;
+
+	IF @getvals LIKE '%[^0-9]%'
+		RETURN @getvals;
+
+	SET @v = 1;
+	SET @returnvals = '';
+
+	WHILE @v <= LEN(@getvals)
+		BEGIN
+			SET @char = SUBSTRING(@getvals, @v, 1);
+			SET @num = CAST(@char AS tinyint);
+
+			IF @v % 2 <> 0
+				SET @iscipher = 1;
+			ELSE
+				SET @iscipher = 0;
+
+			IF @iscipher = @cipher
+				SET @stepVal = 1;
+			ELSE
+				SET @stepVal = - 1;
+
+			SET @num = (@num + @stepVal + 10) % 10
+
+			SET @char = CAST(@num AS nvarchar)
+			SET @returnvals = @returnvals + @char
+			SET @v = @v + 1
+		END
+	RETURN @returnvals
+
+END
+GO
+
+
 -- perform obfuscation of a string value using random values provided to the function
 -- the string will contain the key for deobfuscation and can be deobfuscated by 
 -- DecipherString
