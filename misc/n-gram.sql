@@ -1,5 +1,5 @@
 
-CREATE FUNCTION [dbo].[String_Compare] (
+CREATE FUNCTION [elevant].[String_Compare] (
     @FirstStr NVARCHAR(MAX),
     @SecondStr NVARCHAR(MAX)
 )
@@ -91,7 +91,7 @@ BEGIN
 END
 GO
 
-CREATE FUNCTION [dbo].[String_Punctuation](@input NVARCHAR(MAX))
+CREATE FUNCTION [elevant].[String_Punctuation](@input NVARCHAR(MAX))
 RETURNS NVARCHAR(MAX)
 AS
 BEGIN
@@ -119,7 +119,7 @@ BEGIN
 END
 GO
 
-CREATE FUNCTION [dbo].[String_ExcludeTerms] (@s NVARCHAR(MAX))
+CREATE FUNCTION [elevant].[String_ExcludeTerms] (@s NVARCHAR(MAX))
 RETURNS NVARCHAR(MAX)
 AS
 BEGIN
@@ -147,7 +147,7 @@ END
 
 GO
 
-CREATE FUNCTION [dbo].[String_Normalize]
+CREATE FUNCTION [elevant].[String_Normalize]
 (@input NVARCHAR (MAX))
 RETURNS NVARCHAR (MAX)
 AS
@@ -204,7 +204,7 @@ BEGIN
 END
 GO
 
-CREATE FUNCTION [dbo].[String_Clean] (@input NVARCHAR(MAX))
+CREATE FUNCTION [elevant].[String_Clean] (@input NVARCHAR(MAX))
 RETURNS NVARCHAR(MAX)
 AS
 BEGIN
